@@ -1,0 +1,1 @@
+ESP-based Temperature Sensor with Cloud logging.
