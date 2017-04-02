@@ -8,8 +8,6 @@
 #include <Adafruit_MCP9808.h>
 #include <Adafruit_NeoPixel.h>
 
-Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
-
 /***********************
  *                     *
  * Status LED handling *
@@ -366,6 +364,38 @@ void loop_handle_uart() {
   } // Serial available
 }
 
+/**********************
+ *                    *
+ * Temperature Sensor *
+ *                    *
+ **********************/
+
+Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
+
+void setup_temp_sensor() {
+  Serial.println("Temperature Sensor initialization.");
+
+  // Make sure the sensor is found, you can also pass in a different i2c
+  // address with tempsensor.begin(0x18) for example
+  if (!tempsensor.begin(0x18)) {
+    Serial.println("Couldn't find MCP9808!");
+    setStatusLEDs(status_error, status_connecting);
+    mqtt_publish_event("Couldn't find MCP9808!");
+    while (1) delay(10000);
+  }
+}
+
+float read_temperature() {
+  // Read and print out the temperature, then convert to *C
+  tempsensor.shutdown_wake(0);   // Don't remove this line! required before reading temp
+  delay(250);              // wait for a quarter second
+  float temperature = tempsensor.readTempC();
+  tempsensor.shutdown_wake(1);
+
+  return temperature;
+}
+
+
 /*********
  *       *
  * Setup *
@@ -443,17 +473,6 @@ void setup_mqtt() {
   }
 }
 
-void setup_temp_sensor() {
-  // Make sure the sensor is found, you can also pass in a different i2c
-  // address with tempsensor.begin(0x18) for example
-  Serial.println("Temperature Sensor initialization.");
-  if (!tempsensor.begin(0x18)) {
-    Serial.println("Couldn't find MCP9808!");
-    setStatusLEDs(status_error, status_connecting);
-    mqtt_publish_event("Couldn't find MCP9808!");
-    while (1) delay(10000);
-  }
-}
 
 void setup() {
   // Start UART console
@@ -510,16 +529,6 @@ void loop_check_connection() {
     is_config_mode = true;
     //abort();
   }
-}
-
-float read_temperature() {
-  // Read and print out the temperature, then convert to *C
-  tempsensor.shutdown_wake(0);   // Don't remove this line! required before reading temp
-  delay(250);              // wait for a quarter second
-  float temperature = tempsensor.readTempC();
-  tempsensor.shutdown_wake(1);
-
-  return temperature;
 }
 
 #define SENSOR_WAIT_CYCLES 100
