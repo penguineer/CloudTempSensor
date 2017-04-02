@@ -454,7 +454,7 @@ void setup_mqtt() {
   String clientName = clientname();
 
   String server = eeprom_read_mqtt_server();
-  Serial.println("Connecting to MQTT broker " + server);
+  Serial.println("Connecting to MQTT server " + server);
 
   mqtt_client.setServer(server.c_str(), 1883);
   mqtt_client.setCallback(mqtt_callback);
