@@ -8,27 +8,26 @@
 #include <Adafruit_MCP9808.h>
 #include <Adafruit_NeoPixel.h>
 
-/***********************
- *                     *
- * Status LED handling *
- *                     *
- ***********************/
+/**********************
+ *                    *
+ * State LED handling *
+ *                    *
+ **********************/
 
-// PIN of the Status Pixel
+// PIN of the State LED
 #define STATUS_PIN 2
-Adafruit_NeoPixel statusLED = Adafruit_NeoPixel(2, STATUS_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel stateLED = Adafruit_NeoPixel(2, STATUS_PIN, NEO_GRB + NEO_KHZ800);
 
 // Signalling colors for the status LED (WS2812)
 // 00RRGGBB
-const uint32_t status_connecting = 0x00664411;
-const uint32_t status_connected  = 0x00006611;
-const uint32_t status_logging    = 0x00002266;
-const uint32_t status_error      = 0x00661100;
+const uint32_t state_connecting = 0x00664411;
+const uint32_t state_connected  = 0x00006611;
+const uint32_t state_logging    = 0x00002266;
+const uint32_t state_error      = 0x00661100;
 
-void setStatusLEDs(uint32_t mcpColor, uint32_t wifiColor) {
-  statusLED.setPixelColor(0, mcpColor);
-  statusLED.setPixelColor(1, wifiColor);
-  statusLED.show();
+void setStateLED(uint32_t stateColor) {
+  stateLED.setPixelColor(0, stateColor);
+  stateLED.show();
 }
 
 /*************************************
@@ -379,7 +378,7 @@ void setup_temp_sensor() {
   // address with tempsensor.begin(0x18) for example
   if (!tempsensor.begin(0x18)) {
     Serial.println("Couldn't find MCP9808!");
-    setStatusLEDs(status_error, status_connecting);
+    setStateLED(state_error);
     mqtt_publish_event("Couldn't find MCP9808!");
     while (1) delay(10000);
   }
@@ -483,8 +482,8 @@ void setup() {
   setup_config();
 
   // Status LED initialization
-  statusLED.begin();
-  setStatusLEDs(status_connecting, status_connecting);
+  stateLED.begin();
+  setStateLED(state_connecting);
 
   // TWI initialization
   Wire.begin(4, 5); // SDA, SCL
@@ -501,11 +500,7 @@ void setup() {
     setup_mqtt();
 
   if (!is_config_mode) {
-    setStatusLEDs(status_connecting, status_connected);
-  
     setup_temp_sensor();
-  
-    setStatusLEDs(status_connected, status_connected);
     
     mqtt_publish_event("start-up");
   }
@@ -522,7 +517,7 @@ void setup() {
 void loop_check_connection() {
   // Connection Check (indirectly also checks WiFi)
   if (!mqtt_client.connected()) {
-    setStatusLEDs(status_connected, status_error);
+    setStateLED(state_error);
 
     // reboot if not in config mode
     if (!is_config_mode) {
@@ -546,7 +541,7 @@ void loop() {
     loop_check_connection();
   
   
-    setStatusLEDs(status_logging, status_connected);
+    setStateLED(state_logging);
   
     float temperature = read_temperature();
   
@@ -556,7 +551,7 @@ void loop() {
   
     mqtt_publish_temperature(temperature);
   
-    setStatusLEDs(status_connected, status_connected);
+    setStateLED(state_connected);
   
     mqtt_client.loop();
 
