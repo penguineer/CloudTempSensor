@@ -466,10 +466,8 @@ void setup_mqtt() {
     Serial.print("State Topic is: ");
     Serial.println(eeprom_read_topic_state());
   } else {
-    Serial.println("MQTT connect error, activating config mode.");
+    Serial.println("MQTT connect error, entering config mode.");
     is_config_mode = true;
-    //Serial.println("MQTT connect error, reboot.");
-    //abort();
   }
 }
 
@@ -526,8 +524,11 @@ void loop_check_connection() {
   if (!mqtt_client.connected()) {
     setStatusLEDs(status_connected, status_error);
 
-    is_config_mode = true;
-    //abort();
+    // reboot if not in config mode
+    if (!is_config_mode) {
+      Serial.println("Lost connection, reboot.");
+      abort();
+    }
   }
 }
 
