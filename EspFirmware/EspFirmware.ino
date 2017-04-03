@@ -458,13 +458,24 @@ void setup_mqtt() {
   String clientName = clientname();
 
   String server = eeprom_read_mqtt_server();
-  Serial.println("Connecting to MQTT server " + server);
+  Serial.print("Connecting to MQTT server " + server);
 
   mqtt_client.setServer(server.c_str(), 1883);
   mqtt_client.setCallback(mqtt_callback);
   mqtt_client.setClient(wifiClient);
 
-  if (mqtt_client.connect((char*) clientName.c_str())) {
+  int timeout = 20;
+
+  while (timeout && !mqtt_client.connected()) {
+    Serial.print(".");
+    if (!mqtt_client.connect((char*) clientName.c_str())) {
+      timeout--;
+      delay(500);
+    }
+  }
+
+  if (mqtt_client.connected()) {
+    Serial.println(" Connected.");
     Serial.print("Event Topic is: ");
     Serial.println(eeprom_read_topic_event());
     Serial.print("State Topic is: ");
