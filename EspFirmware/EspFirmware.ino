@@ -253,9 +253,11 @@ void uart_handle_wifi(String cmd, String remain) {
   if (cmd.equals("info"))
     uart_print_wifi_info();
   else if (cmd.equals("essid")) {
+    eeprom_set_magic();
     eeprom_update_wifi_essid(remain);
     uart_print_wifi_info();
   } else if (cmd.equals("password")) {
+    eeprom_set_magic();
     eeprom_update_wifi_password(remain);
     uart_print_wifi_info();
   } else
@@ -276,6 +278,7 @@ void uart_handle_mqtt(String cmd, String remain) {
   if (cmd.equals("info"))
     uart_print_mqtt_info();
   else if (cmd.equals("server")) {
+    eeprom_set_magic();
     eeprom_update_mqtt_server(remain);
     uart_print_mqtt_info();
   } else
@@ -298,9 +301,11 @@ void uart_handle_topic(String cmd, String remain) {
   if (cmd.equals("info"))
     uart_print_topic_info();
   else if (cmd.equals("event")) {
+    eeprom_set_magic();
     eeprom_update_topic_event(remain);
     uart_print_topic_info();
   } else if (cmd.equals("state")) {
+    eeprom_set_magic();
     eeprom_update_topic_state(remain);
     uart_print_topic_info();
   } else
