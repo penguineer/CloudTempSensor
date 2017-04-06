@@ -8,10 +8,14 @@
 #include <Adafruit_MCP9808.h>
 #include <Adafruit_NeoPixel.h>
 
+
 #include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
 
 #include <ArduinoJson.h>
 
+
+static const char* CURRENT_VERSION = "0.0.1";
 
 /**********************
  *                    *
@@ -574,6 +578,51 @@ float read_temperature() {
   return temperature;
 }
 
+/*******************
+ *                 *
+ * ESP HTTP Update *
+ *                 *
+ *******************/
+
+void update_notify(String msg) {
+  if (msg.length() > 0) {
+    Serial.println(msg);
+    mqtt_publish_event(msg.c_str());
+  }
+}
+
+/*
+ * Returns true when an update as been applied
+ */
+bool update_process(const String& url,
+                    const String& fw_version) {
+ //check parameters
+ if (url.length() == 0) {
+   update_notify("Update URL is not configured, not checking.");
+   return false;
+ }
+
+ ESPhttpUpdate.rebootOnUpdate(false);
+
+ // Check and do update
+ t_httpUpdate_return ret = ESPhttpUpdate.update(url,
+                                                fw_version);
+
+ switch (ret) {
+    case HTTP_UPDATE_FAILED:
+    {
+      String error = ESPhttpUpdate.getLastErrorString();
+      update_notify("Update failed: " + error);
+    }; break;
+    case HTTP_UPDATE_NO_UPDATES:
+      break;
+    case HTTP_UPDATE_OK:
+      update_notify("Update successful.");
+      break;
+ };
+
+ return ret == HTTP_UPDATE_OK;
+}
 
 /*********
  *       *
