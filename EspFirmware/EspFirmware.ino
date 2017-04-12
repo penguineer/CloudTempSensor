@@ -56,8 +56,13 @@ bool is_config_mode = true;
 // HTTP Config URL (256 bytes)
 #define EEPROM_OFFSET_HTTP_URL        (EEPROM_OFFSET_WIFI_PASS + EEPROM_LENGTH_WIFI_PASS)
 #define EEPROM_LENGTH_HTTP_URL        256
+// HTTP User (32 bytes)
+#define EEPROM_OFFSET_HTTP_USER       (EEPROM_OFFSET_HTTP_URL + EEPROM_LENGTH_HTTP_URL)
+#define EEPROM_LENGTH_HTTP_USER       32
+// HTTP Pass (32 bytes)
+#define EEPROM_OFFSET_HTTP_PASS       (EEPROM_OFFSET_HTTP_USER + EEPROM_LENGTH_HTTP_USER)
+#define EEPROM_LENGTH_HTTP_PASS       32
 
-// TODO HTTP auth
 
 String read_from_eeprom(int offset, int length) {
   String result = "";
@@ -137,6 +142,22 @@ String eeprom_read_http_url() {
 
 void eeprom_update_http_url(String url) {
   update_eeprom(EEPROM_OFFSET_HTTP_URL, EEPROM_LENGTH_HTTP_URL, url);
+}
+
+String eeprom_read_http_user() {
+  return read_from_eeprom(EEPROM_OFFSET_HTTP_USER, EEPROM_LENGTH_HTTP_USER);
+}
+
+void eeprom_update_http_user(String user) {
+  update_eeprom(EEPROM_OFFSET_HTTP_USER, EEPROM_LENGTH_HTTP_USER, user);
+}
+
+String eeprom_read_http_pass() {
+  return read_from_eeprom(EEPROM_OFFSET_HTTP_PASS, EEPROM_LENGTH_HTTP_PASS);
+}
+
+void eeprom_update_http_pass(String pass) {
+  update_eeprom(EEPROM_OFFSET_HTTP_PASS, EEPROM_LENGTH_HTTP_PASS, pass);
 }
 
 void setup_config() {
@@ -246,13 +267,21 @@ bool http_config_process(String cfg_json) {
     return true;
 }
 
-void http_config_load() {
+bool http_config_load() {
+  bool success = true;
+
   String url = eeprom_read_http_url();
 
   Serial.print("Loading web config from ");
   Serial.println(url);
 
   HTTPClient http;
+
+  String user = eeprom_read_http_user();
+  String pass = eeprom_read_http_pass();
+
+  if ( (user.length() != 0) && (pass.length() != 0))
+    http.setAuthorization(user.c_str(), pass.c_str());
 
   http.begin(url);
 
@@ -263,11 +292,16 @@ void http_config_load() {
     Serial.println(cfg_json);
 
     http_config_process(cfg_json);
+
   } else {
     Serial.println("Error in HTTP request: " + HTTPClient::errorToString(httpCode));
+    success = false;
   }
 
   http.end();
+
+  return success;
+
 }
 
 
@@ -376,6 +410,20 @@ void uart_print_http_info() {
 
   Serial.print("URL: ");
   Serial.println(eeprom_read_http_url());
+
+  String user = eeprom_read_http_user();
+  if (user.length() == 0)
+    Serial.println("User is not set.");
+  else {
+    Serial.print("User: ");
+    Serial.println(user);
+  }
+
+  String pass = eeprom_read_http_pass();
+  if ( pass.length() == 0)
+    Serial.println("Password is not set");
+  else
+    Serial.println("Password is set but will not be printed!");
 }
 
 void uart_handle_http(String cmd, String remain) {
@@ -388,6 +436,14 @@ void uart_handle_http(String cmd, String remain) {
   else if (cmd.equals("url")) {
     eeprom_set_magic();
     eeprom_update_http_url(remain);
+    uart_print_http_info();
+  } else if (cmd.equals("user")) {
+    eeprom_set_magic();
+    eeprom_update_http_user(remain);
+    uart_print_http_info();
+  } else if (cmd.equals("pass")) {
+    eeprom_set_magic();
+    eeprom_update_http_pass(remain);
     uart_print_http_info();
   } else
     Serial.println("Unknown sub-command!");
