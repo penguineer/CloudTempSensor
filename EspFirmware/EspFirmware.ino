@@ -154,6 +154,27 @@ void setup_config() {
  *                           *
  *****************************/
 
+// Example JSON file
+/*
+
+{
+  "name" : "TmpSnsr",
+
+  "update" : {
+    "server" : "updateserver",
+    "port"   : "80",
+    "url"   : "/firmware/ESP-MAC"
+  },
+
+  "mqtt" : {
+    "server" : "mqttserver",
+    "event"  : "/MyHome/Things/TempSensor/1/Events",
+    "state"  : "/MyHome/Things/TempSensor/1/State"
+  }
+}
+
+ */
+
 static String config_mqtt_server;
 static String config_topic_event;
 static String config_topic_state;
