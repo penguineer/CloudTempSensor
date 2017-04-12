@@ -8,6 +8,11 @@
 #include <Adafruit_MCP9808.h>
 #include <Adafruit_NeoPixel.h>
 
+#include <ESP8266HTTPClient.h>
+
+#include <ArduinoJson.h>
+
+
 /**********************
  *                    *
  * State LED handling *
@@ -48,16 +53,11 @@ bool is_config_mode = true;
 // Wifi password (64 bytes)
 #define EEPROM_OFFSET_WIFI_PASS       (EEPROM_OFFSET_WIFI_ESSID + EEPROM_LENGTH_WIFI_ESSID)
 #define EEPROM_LENGTH_WIFI_PASS       64
-// MQTT server name or IP (128 bytes)
-#define EEPROM_OFFSET_MQTT_SERVER     (EEPROM_OFFSET_WIFI_PASS + EEPROM_LENGTH_WIFI_PASS)
-#define EEPROM_LENGTH_MQTT_SERVER     128
-// MQTT Event channel (128 bytes)
-#define EEPROM_OFFSET_MQTT_EVENT      (EEPROM_OFFSET_MQTT_SERVER + EEPROM_LENGTH_MQTT_SERVER)
-#define EEPROM_LENGTH_MQTT_EVENT      128
-// MQTT Status channel (128 bytes)
-#define EEPROM_OFFSET_MQTT_STATE      (EEPROM_OFFSET_MQTT_EVENT + EEPROM_LENGTH_MQTT_EVENT)
-#define EEPROM_LENGTH_MQTT_STATE      128
+// HTTP Config URL (256 bytes)
+#define EEPROM_OFFSET_HTTP_URL        (EEPROM_OFFSET_WIFI_PASS + EEPROM_LENGTH_WIFI_PASS)
+#define EEPROM_LENGTH_HTTP_URL        256
 
+// TODO HTTP auth
 
 String read_from_eeprom(int offset, int length) {
   String result = "";
@@ -131,37 +131,122 @@ void eeprom_update_wifi_password(String password) {
   update_eeprom(EEPROM_OFFSET_WIFI_PASS, EEPROM_LENGTH_WIFI_PASS, password);
 }
 
-String eeprom_read_mqtt_server() {
-  return read_from_eeprom(EEPROM_OFFSET_MQTT_SERVER, EEPROM_LENGTH_MQTT_SERVER);
+String eeprom_read_http_url() {
+  return read_from_eeprom(EEPROM_OFFSET_HTTP_URL, EEPROM_LENGTH_HTTP_URL);
 }
 
-void eeprom_update_mqtt_server(String server) {
-  update_eeprom(EEPROM_OFFSET_MQTT_SERVER, EEPROM_LENGTH_MQTT_SERVER, server);
-}
-
-String eeprom_read_topic_event() {
-  return read_from_eeprom(EEPROM_OFFSET_MQTT_EVENT, EEPROM_LENGTH_MQTT_EVENT);
-}
-
-void eeprom_update_topic_event(String event) {
-  update_eeprom(EEPROM_OFFSET_MQTT_EVENT, EEPROM_LENGTH_MQTT_EVENT, event);
-}
-
-String eeprom_read_topic_state() {
-  return read_from_eeprom(EEPROM_OFFSET_MQTT_STATE, EEPROM_LENGTH_MQTT_STATE);
-}
-
-void eeprom_update_topic_state(String state) {
-  update_eeprom(EEPROM_OFFSET_MQTT_STATE, EEPROM_LENGTH_MQTT_STATE, state);
+void eeprom_update_http_url(String url) {
+  update_eeprom(EEPROM_OFFSET_HTTP_URL, EEPROM_LENGTH_HTTP_URL, url);
 }
 
 void setup_config() {
   EEPROM.begin(512);
-  
+
   if (!eeprom_check_magic())
     return;
 
   //is_config_mode = true;
+}
+
+/*****************************
+ *                           *
+ * Web-based config handling *
+ *                           *
+ *****************************/
+
+static String config_mqtt_server;
+static String config_topic_event;
+static String config_topic_state;
+
+String config_val_mqtt_server() {
+  return config_mqtt_server;
+}
+
+String config_val_topic_event() {
+  return config_topic_event;
+}
+
+String config_val_topic_state() {
+  return config_topic_state;
+}
+
+String configName() {
+  String configName;
+  configName += "ESP";
+  
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  String macStr;
+  for (int i = 0; i < 6; ++i) {
+    macStr += "-";
+    if (mac[i] < 0x10)
+      macStr += "0";
+    macStr += String(mac[i], 16);
+  }
+  macStr.toUpperCase();
+
+  configName += macStr;
+
+  return configName;
+}
+
+bool http_config_process(String cfg_json) {
+    DynamicJsonBuffer  jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(cfg_json);
+
+     if (!root.success()) {
+      Serial.println("JSON parsing failed!");
+      return false;
+    }
+
+    if (root.containsKey("mqtt")) {
+      JsonObject& json_mqtt = root["mqtt"];
+
+      if (json_mqtt.containsKey("server")) {
+        config_mqtt_server = (const char*)json_mqtt["server"];
+
+        Serial.println("MQTT server: " + config_mqtt_server);
+      }
+
+      if (json_mqtt.containsKey("event")) {
+        config_topic_event = (const char*)json_mqtt["event"];
+
+        Serial.println("Event topic: " + config_topic_event);
+      }
+
+      if (json_mqtt.containsKey("state")) {
+        config_topic_state = (const char*)json_mqtt["state"];
+
+        Serial.println("State topic: " + config_topic_state);
+      }
+    }
+
+
+    return true;
+}
+
+void http_config_load() {
+  String url = eeprom_read_http_url();
+
+  Serial.print("Loading web config from ");
+  Serial.println(url);
+
+  HTTPClient http;
+
+  http.begin(url);
+
+  int httpCode = http.GET();
+  if (httpCode == HTTP_CODE_OK) {
+    String cfg_json = http.getString();
+    Serial.println("Web config:");
+    Serial.println(cfg_json);
+
+    http_config_process(cfg_json);
+  } else {
+    Serial.println("Error in HTTP request: " + HTTPClient::errorToString(httpCode));
+  }
+
+  http.end();
 }
 
 
@@ -206,7 +291,7 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
 
 void mqtt_publish_event(const char* event) {
   if (mqtt_client.connected() && event) {
-    if (!mqtt_client.publish(eeprom_read_topic_event().c_str(), event))
+    if (!mqtt_client.publish(config_val_topic_event().c_str(), event))
       Serial.println("MQTT publish failed!");
   }
 }
@@ -216,7 +301,7 @@ void mqtt_publish_temperature(float temperature) {
     String payload = "";
     payload += temperature;
     payload += " C";
-    if (!mqtt_client.publish(eeprom_read_topic_state().c_str(), (char*)payload.c_str()))
+    if (!mqtt_client.publish(config_val_topic_state().c_str(), (char*)payload.c_str()))
       Serial.println("MQTT publish failed!");
   }
 }
@@ -264,12 +349,35 @@ void uart_handle_wifi(String cmd, String remain) {
     Serial.println("Unknown sub-command!");
 }
 
+void uart_print_http_info() {
+  if (is_config_mode)
+    Serial.println("Currently in config mode, no reliable WiFi information available!");
+
+  Serial.print("URL: ");
+  Serial.println(eeprom_read_http_url());
+}
+
+void uart_handle_http(String cmd, String remain) {
+  cmd.toLowerCase();
+
+  if (cmd.equals("info"))
+    uart_print_http_info();
+  else if (cmd.equals("load"))
+    http_config_load();
+  else if (cmd.equals("url")) {
+    eeprom_set_magic();
+    eeprom_update_http_url(remain);
+    uart_print_http_info();
+  } else
+    Serial.println("Unknown sub-command!");
+}
+
 void uart_print_mqtt_info() {
   if (is_config_mode)
     Serial.println("Currently in config mode, no reliable MQTT information available!");
 
   Serial.print("MQTT Server: ");
-  Serial.println(eeprom_read_mqtt_server());
+  Serial.println(config_val_mqtt_server());
 }
 
 void uart_handle_mqtt(String cmd, String remain) {
@@ -277,11 +385,7 @@ void uart_handle_mqtt(String cmd, String remain) {
 
   if (cmd.equals("info"))
     uart_print_mqtt_info();
-  else if (cmd.equals("server")) {
-    eeprom_set_magic();
-    eeprom_update_mqtt_server(remain);
-    uart_print_mqtt_info();
-  } else
+  else
     Serial.println("Unknown sub-command!");
 }
 
@@ -290,9 +394,9 @@ void uart_print_topic_info() {
     Serial.println("Currently in config mode, no reliable MQTT topic information available!");
 
   Serial.print("Event topic: ");
-  Serial.println(eeprom_read_topic_event());
+  Serial.println(config_val_topic_event());
   Serial.print("State topic: ");
-  Serial.println(eeprom_read_topic_state());
+  Serial.println(config_val_topic_state());
 }
 
 void uart_handle_topic(String cmd, String remain) {
@@ -300,21 +404,15 @@ void uart_handle_topic(String cmd, String remain) {
 
   if (cmd.equals("info"))
     uart_print_topic_info();
-  else if (cmd.equals("event")) {
-    eeprom_set_magic();
-    eeprom_update_topic_event(remain);
-    uart_print_topic_info();
-  } else if (cmd.equals("state")) {
-    eeprom_set_magic();
-    eeprom_update_topic_state(remain);
-    uart_print_topic_info();
-  } else
+  else
     Serial.println("Unknown sub-command!");
 }
 
 void uart_dispatch_input(String topic, String cmd, String remain) {
   if (topic.equals("wifi"))
     uart_handle_wifi(cmd, remain);
+  else if (topic.equals("http"))
+    uart_handle_http(cmd, remain);
   else if (topic.equals("mqtt"))
     uart_handle_mqtt(cmd, remain);
   else if (topic.equals("topic"))
@@ -457,7 +555,7 @@ void setup_wifi() {
 void setup_mqtt() {
   String clientName = clientname();
 
-  String server = eeprom_read_mqtt_server();
+  String server = config_val_mqtt_server();
   Serial.print("Connecting to MQTT server " + server);
 
   mqtt_client.setServer(server.c_str(), 1883);
@@ -477,9 +575,9 @@ void setup_mqtt() {
   if (mqtt_client.connected()) {
     Serial.println(" Connected.");
     Serial.print("Event Topic is: ");
-    Serial.println(eeprom_read_topic_event());
+    Serial.println(config_val_topic_event());
     Serial.print("State Topic is: ");
-    Serial.println(eeprom_read_topic_state());
+    Serial.println(config_val_topic_state());
   } else {
     Serial.println("MQTT connect error, entering config mode.");
     is_config_mode = true;
@@ -511,6 +609,9 @@ void setup() {
 
   if (!is_config_mode)
     setup_wifi();
+
+  if (!is_config_mode)
+    http_config_load();
 
   if (!is_config_mode)
     setup_mqtt();
