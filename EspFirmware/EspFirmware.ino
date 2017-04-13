@@ -748,7 +748,9 @@ void setup() {
   Serial.begin(115000);
 
   Serial.println();
-  Serial.println("Setting up...");
+  Serial.print("CloudTempSensor version ");
+  Serial.print(CURRENT_VERSION);
+  Serial.println(" setting up ...");
   
   // Check config
   setup_config();
