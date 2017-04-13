@@ -442,6 +442,24 @@ void uart_print_http_info() {
     Serial.println("Password is set but will not be printed!");
 }
 
+void uart_http_fwupdate() {
+  if (is_config_mode) {
+    Serial.println("Update cannot be performed in config mode!");
+    return;
+  }
+
+  String url = config_val_update_url();
+  if (url.length() == 0) {
+    Serial.println("Firmware URL is not configured!");
+    return;
+  }
+
+  if (update_process(url, CURRENT_VERSION)) {
+    Serial.println("Reboot.");
+
+  }
+}
+
 void uart_handle_http(String cmd, String remain) {
   cmd.toLowerCase();
 
@@ -461,7 +479,9 @@ void uart_handle_http(String cmd, String remain) {
     eeprom_set_magic();
     eeprom_update_http_pass(remain);
     uart_print_http_info();
-  } else
+  } else if (cmd.equals("fwupdate"))
+    uart_http_fwupdate();
+  else
     Serial.println("Unknown sub-command!");
 }
 
