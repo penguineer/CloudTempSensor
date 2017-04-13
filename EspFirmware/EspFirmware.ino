@@ -186,9 +186,7 @@ void setup_config() {
   "name" : "TmpSnsr",
 
   "update" : {
-    "server" : "updateserver",
-    "port"   : "80",
-    "url"   : "/firmware/ESP-MAC"
+    "url"   : "http://udpateserver/firmware/ESP-MAC"
   },
 
   "mqtt" : {
@@ -203,6 +201,7 @@ void setup_config() {
 static String config_mqtt_server;
 static String config_topic_event;
 static String config_topic_state;
+static String config_update_url;
 
 String config_val_mqtt_server() {
   return config_mqtt_server;
@@ -214,6 +213,10 @@ String config_val_topic_event() {
 
 String config_val_topic_state() {
   return config_topic_state;
+}
+
+String config_val_update_url() {
+  return config_update_url;
 }
 
 String configName() {
@@ -267,6 +270,15 @@ bool http_config_process(String cfg_json) {
       }
     }
 
+    if (root.containsKey("update")) {
+      JsonObject& json_update = root["update"];
+
+      if (json_update.containsKey("url")) {
+	config_update_url = (const char*)json_update["url"];
+
+	Serial.println("Update URL: " + config_update_url);
+      } else config_update_url = "";
+    }
 
     return true;
 }
