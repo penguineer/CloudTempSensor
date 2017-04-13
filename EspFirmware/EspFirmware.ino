@@ -456,7 +456,7 @@ void uart_http_fwupdate() {
 
   if (update_process(url, CURRENT_VERSION)) {
     Serial.println("Reboot.");
-
+    ESP.restart();
   }
 }
 
