@@ -8,10 +8,14 @@
 #include <Adafruit_MCP9808.h>
 #include <Adafruit_NeoPixel.h>
 
+
 #include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
 
 #include <ArduinoJson.h>
 
+
+static const char* CURRENT_VERSION = "0.0.1";
 
 /**********************
  *                    *
@@ -182,9 +186,7 @@ void setup_config() {
   "name" : "TmpSnsr",
 
   "update" : {
-    "server" : "updateserver",
-    "port"   : "80",
-    "url"   : "/firmware/ESP-MAC"
+    "url"   : "http://udpateserver/firmware/ESP-MAC"
   },
 
   "mqtt" : {
@@ -199,6 +201,7 @@ void setup_config() {
 static String config_mqtt_server;
 static String config_topic_event;
 static String config_topic_state;
+static String config_update_url;
 
 String config_val_mqtt_server() {
   return config_mqtt_server;
@@ -210,6 +213,10 @@ String config_val_topic_event() {
 
 String config_val_topic_state() {
   return config_topic_state;
+}
+
+String config_val_update_url() {
+  return config_update_url;
 }
 
 String configName() {
@@ -263,6 +270,15 @@ bool http_config_process(String cfg_json) {
       }
     }
 
+    if (root.containsKey("update")) {
+      JsonObject& json_update = root["update"];
+
+      if (json_update.containsKey("url")) {
+	config_update_url = (const char*)json_update["url"];
+
+	Serial.println("Update URL: " + config_update_url);
+      } else config_update_url = "";
+    }
 
     return true;
 }
@@ -426,6 +442,24 @@ void uart_print_http_info() {
     Serial.println("Password is set but will not be printed!");
 }
 
+void uart_http_fwupdate() {
+  if (is_config_mode) {
+    Serial.println("Update cannot be performed in config mode!");
+    return;
+  }
+
+  String url = config_val_update_url();
+  if (url.length() == 0) {
+    Serial.println("Firmware URL is not configured!");
+    return;
+  }
+
+  if (update_process(url, CURRENT_VERSION)) {
+    Serial.println("Reboot.");
+    ESP.restart();
+  }
+}
+
 void uart_handle_http(String cmd, String remain) {
   cmd.toLowerCase();
 
@@ -445,7 +479,9 @@ void uart_handle_http(String cmd, String remain) {
     eeprom_set_magic();
     eeprom_update_http_pass(remain);
     uart_print_http_info();
-  } else
+  } else if (cmd.equals("fwupdate"))
+    uart_http_fwupdate();
+  else
     Serial.println("Unknown sub-command!");
 }
 
@@ -574,6 +610,51 @@ float read_temperature() {
   return temperature;
 }
 
+/*******************
+ *                 *
+ * ESP HTTP Update *
+ *                 *
+ *******************/
+
+void update_notify(String msg) {
+  if (msg.length() > 0) {
+    Serial.println(msg);
+    mqtt_publish_event(msg.c_str());
+  }
+}
+
+/*
+ * Returns true when an update as been applied
+ */
+bool update_process(const String& url,
+                    const String& fw_version) {
+ //check parameters
+ if (url.length() == 0) {
+   update_notify("Update URL is not configured, not checking.");
+   return false;
+ }
+
+ ESPhttpUpdate.rebootOnUpdate(false);
+
+ // Check and do update
+ t_httpUpdate_return ret = ESPhttpUpdate.update(url,
+                                                fw_version);
+
+ switch (ret) {
+    case HTTP_UPDATE_FAILED:
+    {
+      String error = ESPhttpUpdate.getLastErrorString();
+      update_notify("Update failed: " + error);
+    }; break;
+    case HTTP_UPDATE_NO_UPDATES:
+      break;
+    case HTTP_UPDATE_OK:
+      update_notify("Update successful.");
+      break;
+ };
+
+ return ret == HTTP_UPDATE_OK;
+}
 
 /*********
  *       *
@@ -667,7 +748,9 @@ void setup() {
   Serial.begin(115000);
 
   Serial.println();
-  Serial.println("Setting up...");
+  Serial.print("CloudTempSensor version ");
+  Serial.print(CURRENT_VERSION);
+  Serial.println(" setting up ...");
   
   // Check config
   setup_config();
