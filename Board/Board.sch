@@ -37,7 +37,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
 Title "Cloud Temperature Sensor"
-Date "2018-04-15"
+Date "2018-04-16"
 Rev ""
 Comp "penguineer"
 Comment1 ""
@@ -197,7 +197,7 @@ U 1 1 5AD34FD0
 P 2300 6700
 F 0 "D?" H 2950 6050 60  0000 C CNN
 F 1 "VQE24" H 2300 6250 60  0000 C CNN
-F 2 "" H 2150 6550 60  0001 C CNN
+F 2 "n39-kicad:VQE24" H 2150 6550 60  0001 C CNN
 F 3 "https://github.com/netz39/kicad_parts/raw/master/datasheets/VQE_7segment.pdf" H 2500 5750 60  0001 C CNN
 	1    2300 6700
 	1    0    0    -1  
@@ -1087,7 +1087,7 @@ U 1 1 5AD3A16F
 P 1400 3950
 F 0 "C?" H 1425 4050 50  0000 L CNN
 F 1 "33p" H 1425 3850 50  0000 L CNN
-F 2 "" H 1438 3800 50  0001 C CNN
+F 2 "Capacitors_SMD:C_0603_HandSoldering" H 1438 3800 50  0001 C CNN
 F 3 "" H 1400 3950 50  0000 C CNN
 	1    1400 3950
 	1    0    0    -1  
@@ -1168,7 +1168,7 @@ U 1 1 5AD3BA9E
 P 1150 4950
 F 0 "C?" H 1175 5050 50  0000 L CNN
 F 1 "100µ" H 1175 4850 50  0000 L CNN
-F 2 "" H 1188 4800 50  0001 C CNN
+F 2 "Capacitors_SMD:C_0603_HandSoldering" H 1188 4800 50  0001 C CNN
 F 3 "" H 1150 4950 50  0000 C CNN
 	1    1150 4950
 	1    0    0    -1  
@@ -1276,7 +1276,7 @@ U 1 1 5AD51B02
 P 5400 4000
 F 0 "C?" H 5425 4100 50  0000 L CNN
 F 1 "100µ" H 5425 3900 50  0000 L CNN
-F 2 "" H 5438 3850 50  0001 C CNN
+F 2 "Capacitors_SMD:C_0603_HandSoldering" H 5438 3850 50  0001 C CNN
 F 3 "" H 5400 4000 50  0000 C CNN
 	1    5400 4000
 	1    0    0    -1  
@@ -1295,4 +1295,12 @@ $EndComp
 Connection ~ 5400 3750
 Wire Wire Line
 	5400 4150 5400 4250
+Text Notes 2250 1650 0    60   ~ 0
+Footprint
+Text Notes 4400 1700 0    60   ~ 0
+Value\n
+Text Notes 5950 1550 0    60   ~ 0
+Reset Button
+Text Notes 5950 1650 0    60   ~ 0
+Prog Button
 $EndSCHEMATC
