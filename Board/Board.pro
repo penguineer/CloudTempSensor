@@ -1,4 +1,4 @@
-update=So 15 Apr 2018 17:10:40 CEST
+update=Di 17 Apr 2018 20:27:39 CEST
 version=1
 last_client=kicad
 [pcbnew]
@@ -60,3 +60,4 @@ LibName28=contrib
 LibName29=valves
 LibName30=/home/tux/lib/kicad/kicad-ESP8266/ESP8266
 LibName31=/home/tux/Netz39/penguineer_kicad_parts/lib/n39-kicad
+LibName32=switches
