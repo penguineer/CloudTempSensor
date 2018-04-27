@@ -106,12 +106,12 @@ $EndComp
 $Comp
 L VCC #PWR03
 U 1 1 5AD1E585
-P 6150 6050
-F 0 "#PWR03" H 6150 5900 50  0001 C CNN
-F 1 "VCC" H 6150 6200 50  0000 C CNN
-F 2 "" H 6150 6050 50  0000 C CNN
-F 3 "" H 6150 6050 50  0000 C CNN
-	1    6150 6050
+P 6150 6000
+F 0 "#PWR03" H 6150 5850 50  0001 C CNN
+F 1 "VCC" H 6150 6150 50  0000 C CNN
+F 2 "" H 6150 6000 50  0000 C CNN
+F 3 "" H 6150 6000 50  0000 C CNN
+	1    6150 6000
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -899,13 +899,13 @@ Wire Wire Line
 	5800 2900 5900 2900
 Wire Wire Line
 	5350 3000 5900 3000
-Text GLabel 9750 1600 3    39   Output ~ 0
+Text GLabel 9950 1600 3    39   Output ~ 0
 RX
 Text GLabel 7800 2700 2    39   Input ~ 0
 RX
 Text GLabel 7800 2600 2    39   Output ~ 0
 TX
-Text GLabel 9950 1600 3    39   Input ~ 0
+Text GLabel 9750 1600 3    39   Input ~ 0
 TX
 Wire Wire Line
 	7700 3100 8800 3100
@@ -1483,11 +1483,11 @@ Wire Wire Line
 	10050 5400 10050 5300
 Wire Wire Line
 	10050 5300 10200 5300
-Text GLabel 10000 4900 0    39   Output ~ 0
+Text GLabel 10000 5000 0    39   Output ~ 0
 MISO
-Text GLabel 10000 5000 0    39   Input ~ 0
-MOSI
 Text GLabel 10000 5100 0    39   Input ~ 0
+MOSI
+Text GLabel 10000 5200 0    39   Input ~ 0
 SCK
 Wire Wire Line
 	10200 4900 10000 4900
@@ -1518,7 +1518,7 @@ F 3 "" H 10400 5050 50  0000 C CNN
 	1    10400 5050
 	1    0    0    -1  
 $EndComp
-Text GLabel 10000 5200 0    39   Input ~ 0
+Text GLabel 10000 4900 0    39   Input ~ 0
 CS
 Wire Wire Line
 	10000 5200 10200 5200
