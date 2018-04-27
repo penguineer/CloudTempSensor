@@ -3,7 +3,7 @@
   (general
     (links 125)
     (no_connects 0)
-    (area 76.759999 63.424999 146.760001 121.995001)
+    (area 76.759999 62.9976 156.543353 122.3674)
     (thickness 1.6)
     (drawings 26)
     (tracks 385)
@@ -65,7 +65,7 @@
     (grid_origin 116.84 98.425)
     (visible_elements FFFEFF7F)
     (pcbplotparams
-      (layerselection 0x00030_80000001)
+      (layerselection 0x010f0_80000001)
       (usegerberextensions false)
       (excludeedgelayer true)
       (linewidth 0.100000)
@@ -86,9 +86,9 @@
       (subtractmaskfromsilk false)
       (outputformat 1)
       (mirror false)
-      (drillshape 1)
+      (drillshape 0)
       (scaleselection 1)
-      (outputdirectory ""))
+      (outputdirectory /home/tux/Projekte/CloudTempSensor/Board/))
   )
 
   (net 0 "")
