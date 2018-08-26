@@ -605,19 +605,24 @@ float read_temperature() {
 
 #define DISPLAY_I2C 0x20
 
+const byte display_GPA[] = {0x3f, 0x0c, 0x6b, 0x6d, 0x5c, 0x75, 0x77, 0x2c, 0x7f, 0x7d};
+const byte display_GPB[] = {0x7e, 0x48, 0x3b, 0x5b, 0x4d, 0x57, 0x77, 0x4a, 0x7f, 0x5f};
+
 void setup_display() {
 	Serial.println("Display initialization.");
 	
+	// set direction
 	Wire.beginTransmission(DISPLAY_I2C);
 	Wire.write(0x02);
 	Wire.write(0x00);
 	Wire.write(0x00);
 	Wire.endTransmission();
 
+	// set initial value
 	Wire.beginTransmission(DISPLAY_I2C);
 	Wire.write(0x06);
-	Wire.write(0x00);
-	Wire.write(0x00);
+	Wire.write(0xFF);
+	Wire.write(0xFF);
 	Wire.endTransmission();
 }
 
@@ -627,6 +632,22 @@ void set_display_raw(byte d0, byte d1) {
 	Wire.write(d0);
 	Wire.write(d1);
 	Wire.endTransmission();
+}
+
+void set_display(int num) {
+	// digit order: dA dB
+	
+	if ((num < 0) || (num > 99)) {
+		// Error
+		set_display_raw(0x73, 0x37); // "EE"
+	} else {
+		int dA = num / 10;
+		int dB = num % 10;
+		
+		// note: bit-wise inversion is needed!
+		set_display_raw(~display_GPA[dA],
+						~display_GPB[dB]);
+	}
 }
 
 /*******************
@@ -842,6 +863,9 @@ void loop() {
 	Serial.print("Temperature: ");
 	Serial.print(temperature);
 	Serial.println(" C");
+	
+	// display
+	set_display(round(temperature));
 	
 	// the rest: only when not in config mode
 	if (!is_config_mode) {
