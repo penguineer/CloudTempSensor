@@ -14,6 +14,8 @@
 
 #include <ArduinoJson.h>
 
+#include <N39SmartThing.h>
+
 
 static const char* CURRENT_VERSION = "0.0.1";
 
@@ -24,7 +26,7 @@ static const char* CURRENT_VERSION = "0.0.1";
  **********************/
 
 // PIN of the State LED
-#define STATUS_PIN 2
+#define STATUS_PIN 12
 Adafruit_NeoPixel stateLED = Adafruit_NeoPixel(2, STATUS_PIN, NEO_GRB + NEO_KHZ800);
 
 // Signalling colors for the status LED (WS2812)
@@ -284,40 +286,25 @@ bool http_config_process(String cfg_json) {
 }
 
 bool http_config_load() {
-  bool success = true;
+  N39SmartThing smartThing;
 
-  String url = eeprom_read_http_url();
+  smartThing.setConfigUrlAuth(
+    eeprom_read_http_url(),
+    eeprom_read_http_user(),
+    eeprom_read_http_pass());
 
-  Serial.print("Loading web config from ");
-  Serial.println(url);
+  const bool success = smartThing.loadConfig();
 
-  HTTPClient http;
+  if (!success)
+    Serial.println("ERROR: " + smartThing.getLastError());
+  else {
+    Serial.println("Config mqtt.server: " +
+      smartThing.getConfigValue("mqtt", "server"));
 
-  String user = eeprom_read_http_user();
-  String pass = eeprom_read_http_pass();
-
-  if ( (user.length() != 0) && (pass.length() != 0))
-    http.setAuthorization(user.c_str(), pass.c_str());
-
-  http.begin(url);
-
-  int httpCode = http.GET();
-  if (httpCode == HTTP_CODE_OK) {
-    String cfg_json = http.getString();
-    Serial.println("Web config:");
-    Serial.println(cfg_json);
-
-    http_config_process(cfg_json);
-
-  } else {
-    Serial.println("Error in HTTP request: " + HTTPClient::errorToString(httpCode));
-    success = false;
+    http_config_process(smartThing.getConfigJson());
   }
 
-  http.end();
-
   return success;
-
 }
 
 
@@ -610,6 +597,38 @@ float read_temperature() {
   return temperature;
 }
 
+/**********************
+ *                    *
+ * Display *
+ *                    *
+ **********************/
+
+#define DISPLAY_I2C 0x20
+
+void setup_display() {
+	Serial.println("Display initialization.");
+	
+	Wire.beginTransmission(DISPLAY_I2C);
+	Wire.write(0x02);
+	Wire.write(0x00);
+	Wire.write(0x00);
+	Wire.endTransmission();
+
+	Wire.beginTransmission(DISPLAY_I2C);
+	Wire.write(0x06);
+	Wire.write(0x00);
+	Wire.write(0x00);
+	Wire.endTransmission();
+}
+
+void set_display_raw(byte d0, byte d1) {
+	Wire.beginTransmission(DISPLAY_I2C);
+	Wire.write(0x06);
+	Wire.write(d0);
+	Wire.write(d1);
+	Wire.endTransmission();
+}
+
 /*******************
  *                 *
  * ESP HTTP Update *
@@ -767,6 +786,8 @@ void setup() {
   Serial.print("Client name ");
   Serial.println(clientName);
 
+  setup_display();
+  
   if (!is_config_mode)
     setup_wifi();
 
@@ -776,10 +797,10 @@ void setup() {
   if (!is_config_mode)
     setup_mqtt();
 
-  if (!is_config_mode) {
     setup_temp_sensor();
-    
-    mqtt_publish_event("start-up");
+
+  if (!is_config_mode) {
+	  mqtt_publish_event("start-up");
   }
 
   uart_announce();
@@ -812,25 +833,28 @@ void loop() {
   loop_handle_uart();
 
 
-  // the rest: only when not in config mode
-
-  if (!is_config_mode && !sensor_cycles--) {
-    loop_check_connection();
+  if (!sensor_cycles--) {
   
-  
-    setStateLED(state_logging);
-  
-    float temperature = read_temperature();
-  
-    Serial.print("Temperature: ");
-    Serial.print(temperature);
-    Serial.println(" C");
-  
-    mqtt_publish_temperature(temperature);
-  
-    setStateLED(state_connected);
-  
-    mqtt_client.loop();
+	setStateLED(state_logging);
+	
+	float temperature = read_temperature();
+	
+	Serial.print("Temperature: ");
+	Serial.print(temperature);
+	Serial.println(" C");
+	
+	// the rest: only when not in config mode
+	if (!is_config_mode) {
+		loop_check_connection();
+		
+		mqtt_publish_temperature(temperature);
+	
+		setStateLED(state_connected);
+	
+		mqtt_client.loop();
+	} else {
+		setStateLED(state_connecting);		
+	}
 
     sensor_cycles = SENSOR_WAIT_CYCLES;
   } // if !is_config_mode
