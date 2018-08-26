@@ -843,8 +843,6 @@ Wire Wire Line
 Connection ~ 3850 1000
 Wire Wire Line
 	4950 2400 4950 3300
-Wire Wire Line
-	7200 1150 7200 1250
 Connection ~ 4950 2800
 Text GLabel 8600 2950 1    39   Input ~ 0
 PROG
@@ -1249,8 +1247,6 @@ F 3 "" H 7500 1700 50  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	7200 1550 7200 1600
-Wire Wire Line
 	3850 1800 3850 1750
 Text GLabel 6100 1000 2    39   Output ~ 0
 RESET
@@ -1351,36 +1347,14 @@ Wire Wire Line
 	5600 2500 5600 3000
 Connection ~ 5600 3000
 $Comp
-L C C8
-U 1 1 5AD74D33
+L C C7
+U 1 1 5AD7521C
 P 7500 1400
-F 0 "C8" H 7525 1500 50  0000 L CNN
+F 0 "C7" H 7525 1500 50  0000 L CNN
 F 1 "22µ" H 7525 1300 50  0000 L CNN
 F 2 "Capacitors_SMD:C_1206_HandSoldering" H 7538 1250 50  0001 C CNN
 F 3 "" H 7500 1400 50  0000 C CNN
 	1    7500 1400
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C9
-U 1 1 5AD7515D
-P 7800 1400
-F 0 "C9" H 7825 1500 50  0000 L CNN
-F 1 "22µ" H 7825 1300 50  0000 L CNN
-F 2 "Capacitors_SMD:C_1206_HandSoldering" H 7838 1250 50  0001 C CNN
-F 3 "" H 7800 1400 50  0000 C CNN
-	1    7800 1400
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C7
-U 1 1 5AD7521C
-P 7200 1400
-F 0 "C7" H 7225 1500 50  0000 L CNN
-F 1 "22µ" H 7225 1300 50  0000 L CNN
-F 2 "Capacitors_SMD:C_1206_HandSoldering" H 7238 1250 50  0001 C CNN
-F 3 "" H 7200 1400 50  0000 C CNN
-	1    7200 1400
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -1392,17 +1366,7 @@ Wire Wire Line
 Wire Wire Line
 	7500 1050 7500 1250
 Wire Wire Line
-	7800 1150 7800 1250
-Wire Wire Line
-	7200 1600 7800 1600
-Wire Wire Line
-	7800 1600 7800 1550
-Wire Wire Line
 	7500 1550 7500 1700
-Connection ~ 7500 1600
-Wire Wire Line
-	7200 1150 7800 1150
-Connection ~ 7500 1150
 $Comp
 L VCC #PWR030
 U 1 1 5AD7B5BE
@@ -1530,4 +1494,38 @@ Wire Wire Line
 	8100 2800 8250 2800
 Wire Wire Line
 	8100 2900 8250 2900
+$Comp
+L CONN_01X03 P4
+U 1 1 5B82EAAC
+P 10450 2400
+F 0 "P4" H 10450 2600 50  0000 C CNN
+F 1 "CONN_01X03" V 10550 2400 50  0000 C CNN
+F 2 "Pin_Headers:Pin_Header_Straight_1x03" H 10450 2400 50  0001 C CNN
+F 3 "" H 10450 2400 50  0000 C CNN
+	1    10450 2400
+	1    0    0    -1  
+$EndComp
+Text GLabel 10100 2300 0    39   BiDi ~ 0
+SCL
+Text GLabel 10100 2500 0    39   BiDi ~ 0
+SDA
+$Comp
+L GND #PWR033
+U 1 1 5B82F09B
+P 9750 2500
+F 0 "#PWR033" H 9750 2250 50  0001 C CNN
+F 1 "GND" H 9750 2350 50  0000 C CNN
+F 2 "" H 9750 2500 50  0000 C CNN
+F 3 "" H 9750 2500 50  0000 C CNN
+	1    9750 2500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	10250 2300 10100 2300
+Wire Wire Line
+	10250 2500 10100 2500
+Wire Wire Line
+	10250 2400 9750 2400
+Wire Wire Line
+	9750 2400 9750 2500
 $EndSCHEMATC
